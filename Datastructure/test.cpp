@@ -2,8 +2,11 @@
 using namespace std;
 
 int main() {
-    int *p = new int(20);
+    int *p = NULL;
     delete p;
-    bool m = (p == NULL);
-    cout<<m;
+    if(p) {
+        cout<<"Hello";
+    }
+    cout<<"test";
+    delete p;
 }
