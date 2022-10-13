@@ -1,6 +1,14 @@
 #include <iostream>
+#include <vector>
 using namespace std;
 
+/**
+ * enum class for deletion support
+ * ----
+ * elements are a naming reference to one neighbor in the Matrix
+ * ----
+ * end indicates the tail item in a Matrix walkthrough
+*/
 enum class delete_helper {
   up,
   down,
@@ -21,17 +29,20 @@ template <typename T> class Matrixelement {
 
     public:
       Matrixelement(int x, int y, Matrixelement<T> *up, Matrixelement<T> *left);
+      bool init_sec();
       ~Matrixelement();
       bool del_method(delete_helper way1, delete_helper way2);
       Matrixelement<T>* get_up();
       Matrixelement<T>* get_right();
       Matrixelement<T>* get_left();
       Matrixelement<T>* get_down();
-      bool init_sec();
-      bool get_iterate(int x, int y);
-      bool add_dimension(int x, int y);
-      bool delete_dimension(int x, int y);
-      bool print_data();
-      long add_value();
-      bool safe_to_file();
+      T get_iterate(int x, int y);
+      bool set_iterate(int x, int y, T& data);
+      vector<T> get_row(int y);
+      vector<T> get_column(int x);
+      bool add_dimension_y(int y, int &current_size_x, int &current_size_y);
+      bool add_dimension_x(int x, int &current_size_x, int &current_size_y);
+      bool delete_dimension_y(int y);
+      bool delete_dimension_x(int x);
+      void print_data(int y, bool first);
 };
