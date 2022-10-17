@@ -64,7 +64,7 @@ Matrixelement<T>::~Matrixelement() {
 template <class T>
 bool del_method(delete_helper way1, delete_helper way2) {
     bool all_ok = true;
-    if(!((Matrixelement<T>::followup_right == NULL) && ((Matrixelement<T>::followup_down == NULL) || (Matrixelement<T>::before_up == NULL))) || way2 == delete_helper::right) {
+    if((!((Matrixelement<T>::followup_right == NULL) && ((Matrixelement<T>::followup_down == NULL) || (Matrixelement<T>::before_up == NULL))) || way2 == delete_helper::right) && way1 != delete_helper::right) {
         switch(way1) {
             case delete_helper::down:
                 switch (way2) {
@@ -126,6 +126,9 @@ bool del_method(delete_helper way1, delete_helper way2) {
                         return false;
                 }
         }
+    } else if (way1 == delete_helper::right && way2 == delete_helper::right && Matrixelement<T>::followup_right != NULL) {
+        Matrixelement<T>::way_del = delete_helper::right;
+        Matrixelement<T>::followup:right->del_method(way1, way2);
     }
     this->~Matrixelement();
     return all_ok;
@@ -247,7 +250,7 @@ bool Matrixelement<T>::add_dimension_y(int y, int &current_size_x, int &current_
 
         while(up_temp->get_right() != NULL && down_temp->get_right() != NULL) {
             up_temp->get_right()->set_down(down_temp->get_right());
-            down_temp->get_right()->set_upleft(up_temp->get_right());
+            down_temp->get_right()->set_up(up_temp->get_right());
             up_temp = up_temp->get_right();
             down_temp = down_temp->get_right();
         };
@@ -269,16 +272,16 @@ bool Matrixelement<T>::add_dimension_x(int x, int &current_size_x, int &current_
         Matrixelement<T> *right_temp = Matrixelement<T>::followup_right;
 
         while(left_temp->get_down() != NULL && right_temp->get_down() != NULL) { // change rest of loop
-            up_temp->get_right()->set_down(down_temp->get_right());
-            down_temp->get_right()->set_upleft(up_temp->get_right());
-            up_temp = up_temp->get_right();
-            down_temp = down_temp->get_right();
+            left_temp->get_down()->set_right(right_temp->get_down());
+            right_temp->get_down()->set_left(left_temp->get_down());
+            left_temp = left_temp->get_down();
+            right_temp = right_temp->get_down();
         };
-        up_temp = NULL;
-        down_temp = NULL;
-        delete up_temp;
-        delete down_temp;
-        current_size_y++;
+        left_temp = NULL;
+        right_temp = NULL;
+        delete left_temp;
+        delete right_temp;
+        current_size_x++;
         Matrixelement<T>::followup_down->add_dimension(x-1, current_size_x, current_size_y);
     } else {
         Matrixelement<T>::followup_right->add_dimension_x(x, current_size_x, current_size_y);
@@ -286,10 +289,85 @@ bool Matrixelement<T>::add_dimension_x(int x, int &current_size_x, int &current_
 }
 
 template <class T>
-bool Matrixelement<T>::delete_dimension_y(int y) {}
+bool Matrixelement<T>::delete_dimension_y(int y, int current_size_x, int current_size_y, int rows) { // y = current_size_y - rows to delete
+if(y > 0) {
+        Matrixelement<T>::followup_right::delete_dimension_x(y-1);
+    } else {
+        Matrixelement<T>* up_temp = this->get_right();
+        Matrixelement<T>* down_temp = this-get_down()->get_right();
+
+        while (up_temp != NULL) {
+            up_temp->set_down(NULL);
+            down_temp->set_up(NULL);
+            up_temp = up_temp->get_right();
+            down_temp = down_temp->get_right();
+        }
+
+        up_temp = NULL;
+        down_temp = NULL;
+        delete up_temp;
+        delete down_temp;
+        
+        if(current_size_x == 1 && rows == 1) {
+            delete Matrixelement<T>::followup_down;
+            Matrixelement<T>::followup_down = NULL;
+        } else if(current_size_x == 1 && rows != 1) {
+            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::right);
+        } else if(current_size_x != 1 && rows == 1) {
+            Matrixelement<T>::followup_down->del_method(delete_helper::right, delete_helper::right);
+        } else {
+            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::up);
+        }
+    }
+}
 
 template <class T>
-bool Matrixelement<T>::delete_dimension_x(int x) {}
+bool Matrixelement<T>::delete_dimension_x(int x, int current_size_x, int current_size_y, int columns) { // x = current_size_x - columns to delete
+    if(x > 0) {
+        Matrixelement<T>::followup_right::delete_dimension_x(x-1);
+    } else {
+        if(columns == 1 && current_size_y == 1) {
+            delete Matrixelement<T>::followup_down;
+            Matrixelement<T>::followup_down = NULL;
+        } else if(columns == 1 && current_size_y != 1) {
+            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::right);
+        } else if(columns != 1 && current_size_y == 1) {
+            Matrixelement<T>::followup_down->del_method(delete_helper::right, delete_helper::right);
+        } else {
+            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::up);
+        }
+        Matrixelement<T>::followup_right::del_helper(delete_helper::down, delete_helper::down);
+        delete Matrixelement<T>::followup_right;
+        Matrixelement<T>::followup_right = NULL;
+        Matrixelement<T>* temp = Matrixelement<T>::followup_down;
+        while(temp != NULL) {
+            temp->set_right(NULL);
+            temp = temp->get_down();
+        }
+        temp = NULL;
+        delete temp;
+    }
+}
+
+template <class T>
+void Matrixelement<T>::set_right(Matrixelement<T>* new_right) {
+    Matrixelement<T>::followup_right == new_right;
+}
+
+template <class T>
+void Matrixelement<T>::set_left(Matrixelement<T>* new_left) {
+    Matrixelement<T>::before_left == new_left;
+}
+
+template <class T>
+void Matrixelement<T>::set_up(Matrixelement<T>* new_up) {
+    Matrixelement<T>::before_up == new_up;
+}
+
+template <class T>
+void Matrixelement<T>::set_down(Matrixelement<T>* new_down) {
+    Matrixelement<T>::followup_down == new_down;
+}
 
 template <class T>
 void Matrixelement<T>::print_data(int y, bool first) {
