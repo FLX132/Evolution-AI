@@ -4,4 +4,5 @@
 #include <vector>
 #include <array>
 #include <exception>
+#include <type_traits>
 #endif

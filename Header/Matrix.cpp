@@ -2,7 +2,7 @@
 #include "Matrixelement.cpp"
 using namespace std;
 
-template <typename T> class Matrix {
+template <typename T, typename = typename enable_if<is_arithmetic<T>::value, T>::type> class Matrix {
     private:
         Matrixelement<T>* reference_start = NULL;
         int current_x;
@@ -29,90 +29,90 @@ template <typename T> class Matrix {
         //}
 };
 
-template <class T>
-Matrix<T>::Matrix(int x, int y, vector<T> values) {
+template <typename T, typename M>
+Matrix<T, M>::Matrix(int x, int y, vector<T> values) {
     if(x*y != (values.size())) {
         std::cout<<"false formatted init-list";
-        Matrix<T>::error_in_construct = true;
+        Matrix<T, M>::error_in_construct = true;
         delete this;
     } else {
-        Matrix<T>::reference_start = new Matrixelement<T>(x-1, y-1, NULL, NULL);
-        Matrix<T>::reference_start->init_sec();
+        Matrix<T, M>::reference_start = new Matrixelement<T>(x-1, y-1, NULL, NULL);
+        Matrix<T, M>::reference_start->init_sec();
         std::cout<<"Matrix init "<<values.size()<<std::endl;
         int count = 0;
         for(int i = 0; i < y; i++) {
             for(int j = 0; j < x; j++) {
                 cout<<i<<" "<<j<<" "<<count<<std::endl;
-                Matrix<T>::reference_start->set_iterate(j, i, values[count]);
+                Matrix<T, M>::reference_start->set_iterate(j, i, values[count]);
                 count++;
             }
         }
-        Matrix<T>::current_x = x;
-        Matrix<T>::current_y = y;
+        Matrix<T, M>::current_x = x;
+        Matrix<T, M>::current_y = y;
     }
 }
 
-template <class T>
-Matrix<T>::Matrix(int& x, int& y) {
-    Matrix<T>::reference_start = new Matrixelement<T>(x-1, y-1, NULL, NULL);
-    Matrix<T>::reference_start->init_sec();
-    Matrix<T>::current_x = x;
-    Matrix<T>::current_y = y;
+template <typename T, typename M>
+Matrix<T, M>::Matrix(int& x, int& y) {
+    Matrix<T, M>::reference_start = new Matrixelement<T>(x-1, y-1, NULL, NULL);
+    Matrix<T, M>::reference_start->init_sec();
+    Matrix<T, M>::current_x = x;
+    Matrix<T, M>::current_y = y;
 }
 
-template <class T>
-Matrix<T>::~Matrix() {
-    if(!Matrix<T>::error_in_construct) {
-        Matrix<T>::reference_start->del_method(delete_helper::down, delete_helper::down);
-        delete Matrix<T>::reference_start;
+template <typename T, typename M>
+Matrix<T, M>::~Matrix() {
+    if(!Matrix<T, M>::error_in_construct) {
+        Matrix<T, M>::reference_start->del_method(delete_helper::down, delete_helper::down);
+        delete Matrix<T, M>::reference_start;
     }
-    Matrix<T>::reference_start == NULL;
+    Matrix<T, M>::reference_start == NULL;
 }
 
-template <class T>
-void Matrix<T>::autofill(T values[]) {
+template <typename T, typename M>
+void Matrix<T, M>::autofill(T values[]) {
     int count = 0;
     for(int i = 0; i < this->get_y(); i++) {
         for(int j = 0; j < this->get_x(); j++) {
-            Matrix<T>::reference_start->set_iterate(j, i, values[count]);
+            Matrix<T, M>::reference_start->set_iterate(j, i, values[count]);
             count++;
         }
         count++;
     }
 }
 
-template <class T>
-vector<T> Matrix<T>::get_row(int y) {
-    return Matrix<T>::reference_start->get_row(y);
+template <typename T, typename M>
+vector<T> Matrix<T, M>::get_row(int y) {
+    return Matrix<T, M>::reference_start->get_row(y);
 }
 
-template <class T>
-vector<T> Matrix<T>::get_column(int x) {
-    return Matrix<T>::reference_start->get_column(x);
+template <typename T, typename M>
+vector<T> Matrix<T, M>::get_column(int x) {
+    return Matrix<T, M>::reference_start->get_column(x);
 }
 
-template <class T>
-int Matrix<T>::get_x() {
-    return Matrix<T>::current_x;
+template <typename T, typename M>
+int Matrix<T, M>::get_x() {
+    return Matrix<T, M>::current_x;
 }
 
-template <class T>
-int Matrix<T>::get_y() {
-    return Matrix<T>::current_y;
+template <typename T, typename M>
+int Matrix<T, M>::get_y() {
+    return Matrix<T, M>::current_y;
 }
 
-template <class T>
-T Matrix<T>::get_val(int x, int y) {
-    return Matrix<T>::reference_start->get_iterate(x, y);
+template <typename T, typename M>
+T Matrix<T, M>::get_val(int x, int y) {
+    return Matrix<T, M>::reference_start->get_iterate(x, y);
 }
 
-template <class T>
-Matrix<T>& Matrix<T>::operator*(Matrix<T> mul) {
+template <typename T, typename M>
+Matrix<T>& Matrix<T, M>::operator*(Matrix<T> mul) {
     try {
         if(this->get_x() != mul.get_y()) {
             throw "False Matrix dimensions";
         }
-        Matrix<T> temp = Matrix<T>(mul.get_x(), this->get_y());
+        Matrix<T> temp = Matrix<T>(this->get_y(), mul.get_x());
         vector<vector<T>> mul1;
         vector<vector<T>> mul2;
         for(int i = 1; i <= mul.get_x(); i++) {
@@ -135,16 +135,16 @@ Matrix<T>& Matrix<T>::operator*(Matrix<T> mul) {
     
 }
 
-template <class T>
-Matrix<T>& Matrix<T>::operator+(Matrix<T> add) {}
+template <typename T, typename M>
+Matrix<T>& Matrix<T, M>::operator+(Matrix<T> add) {}
 
-template <class T>
-Matrix<T>& Matrix<T>::operator+=(Matrix<T>& add_is) {}
+template <typename T, typename M>
+Matrix<T>& Matrix<T, M>::operator+=(Matrix<T>& add_is) {}
 
-template <class T>
-Matrix<T>& Matrix<T>::operator*=(Matrix<T>& mul_is) {}
+template <typename T, typename M>
+Matrix<T>& Matrix<T, M>::operator*=(Matrix<T>& mul_is) {}
 
-template <class T>
-void Matrix<T>::print() {
-    Matrix<T>::reference_start->print_data(Matrix<T>::current_y-1, true);
+template <typename T, typename M>
+void Matrix<T, M>::print() {
+    Matrix<T, M>::reference_start->print_data(Matrix<T, M>::current_y-1, true);
 }
