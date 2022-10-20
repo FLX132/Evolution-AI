@@ -1,10 +1,60 @@
-#include <iostream>
-#include <vector>
-#include "../Header/Matrixelement.h"
+#include "AllHeaders.h"
+using namespace std;
+
+/**
+ * enum class for deletion support
+ * ----
+ * elements are a naming reference to one neighbor in the Matrix
+ * ----
+ * end indicates the tail item in a Matrix walkthrough
+*/
+enum class delete_helper {
+  up,
+  down,
+  right,
+  end
+};
+
+template <typename T> class Matrixelement {
+
+    private:
+      Matrixelement<T> *followup_right = NULL;
+      Matrixelement<T> *followup_down = NULL;
+      Matrixelement<T> *before_left = NULL;
+      Matrixelement<T> *before_up = NULL;
+      delete_helper way_del;
+
+      T* data = NULL;
+
+    public:
+      Matrixelement(int x, int y, Matrixelement<T> *up, Matrixelement<T> *left);
+      bool init_sec();
+      void delete_next();
+      bool del_method(delete_helper way1, delete_helper way2);
+      Matrixelement<T>* get_up();
+      Matrixelement<T>* get_right();
+      Matrixelement<T>* get_left();
+      Matrixelement<T>* get_down();
+      void set_right(Matrixelement<T>* new_right);
+      void set_left(Matrixelement<T>* new_left);
+      void set_up(Matrixelement<T>* new_up);
+      void set_down(Matrixelement<T>* new_down);
+      T& get_iterate(int x, int y);
+      bool set_iterate(int x, int y, T& data_new);
+      vector<T> get_row(int y);
+      vector<T> get_column(int x);
+      bool add_dimension_y(int y, int &current_size_x, int &current_size_y);
+      bool add_dimension_x(int x, int &current_size_x, int &current_size_y);
+      bool delete_dimension_y(int y, int current_size_x, int current_size_y, int rows);
+      bool delete_dimension_x(int x, int current_size_x, int current_size_y, int columns);
+      void print_data(int y, bool first);
+};
 using namespace std;
 
 template <class T>
 Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T> *up, Matrixelement<T> *left) {
+    std::cout<<"Called Matrixelement constructor"<<std::endl;
+    Matrixelement<T>::data = new T();
     Matrixelement<T>::way_del = delete_helper::end;
     Matrixelement<T>::before_up = up;
     Matrixelement<T>::before_left = left;
@@ -29,7 +79,8 @@ Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T> *up, Matrixelemen
 }
 
 template <class T>
-Matrixelement<T>::~Matrixelement() {
+void Matrixelement<T>::delete_next() { // next step, destructor travels through Matrix and starts deletion chain
+    std::cout<<"Called Matrixelement destructor"<<std::endl;
     switch (Matrixelement<T>::way_del) {
         case delete_helper::up:
             Matrixelement<T>::before_left = NULL;
@@ -59,22 +110,24 @@ Matrixelement<T>::~Matrixelement() {
             Matrixelement<T>::followup_right = NULL;
             break;
     }
+    delete Matrixelement<T>::data;
 }
 
 template <class T>
-bool del_method(delete_helper way1, delete_helper way2) {
+bool Matrixelement<T>::del_method(delete_helper way1, delete_helper way2) {
     bool all_ok = true;
-    if((!((Matrixelement<T>::followup_right == NULL) && ((Matrixelement<T>::followup_down == NULL) || (Matrixelement<T>::before_up == NULL))) || way2 == delete_helper::right) && way1 != delete_helper::right) {
+    if(!((Matrixelement<T>::followup_right == NULL) && ((Matrixelement<T>::followup_down == NULL) || (Matrixelement<T>::before_up == NULL))) || way2 == delete_helper::right) {
+        bool all_ok = true;
         switch(way1) {
             case delete_helper::down:
                 switch (way2) {
                     case delete_helper::down:
                         if(Matrixelement<T>::followup_down == NULL) {
                             Matrixelement<T>::way_del = delete_helper::right;
-                            all_ok = Matrixelement<T>::folloup_right->del_method(way2, delete_helper::right);
+                            all_ok = Matrixelement<T>::followup_right->del_method(way2, delete_helper::right);
                         } else {
                             Matrixelement<T>::way_del = delete_helper::down;
-                            all_ok = Matrixelement<T>::folloup_down->del_method(way2, delete_helper::down);
+                            all_ok = Matrixelement<T>::followup_down->del_method(way2, delete_helper::down);
                         }
                         break;
                     case delete_helper::right:
@@ -84,12 +137,13 @@ bool del_method(delete_helper way1, delete_helper way2) {
                     default:
                         return false;
                 }
+                break;
             case delete_helper::up:
                 switch (way2) {
                     case delete_helper::up:
                         if(Matrixelement<T>::before_up == NULL) {
                             Matrixelement<T>::way_del = delete_helper::right;
-                            all_ok = Matrixelement<T>::folloup_right->del_method(way2, delete_helper::right);
+                            all_ok = Matrixelement<T>::followup_right->del_method(way2, delete_helper::right);
                         } else {
                             Matrixelement<T>::way_del = delete_helper::up;
                             all_ok = Matrixelement<T>::before_up->del_method(way2, delete_helper::up);
@@ -97,26 +151,28 @@ bool del_method(delete_helper way1, delete_helper way2) {
                         break;
                     case delete_helper::right:
                         Matrixelement<T>::way_del = delete_helper::down;
-                        all_ok = Matrixelement<T>::folloup_down->del_method(way2, delete_helper::down);
+                        all_ok = Matrixelement<T>::followup_down->del_method(way2, delete_helper::down);
                         break;
                     default:
                         return false;
                 }
+                break;
             case delete_helper::right:
                 switch (way2) {
                     case delete_helper::down:
                         if(Matrixelement<T>::followup_down == NULL) {
                             Matrixelement<T>::way_del = delete_helper::right;
-                            all_ok = Matrixelement<T>::folloup_right->del_method(way2, delete_helper::right);
+                            all_ok = Matrixelement<T>::followup_right->del_method(way2, delete_helper::right);
                         } else {
                             Matrixelement<T>::way_del = delete_helper::down;
-                            all_ok = Matrixelement<T>::folloup_down->del_method(way2, delete_helper::down);
+                            all_ok = Matrixelement<T>::followup_down->del_method(way2, delete_helper::down);
                         }
                         break;
                     case delete_helper::up:
+                        std::cout<<"right up"<<std::endl;
                         if(Matrixelement<T>::before_up == NULL) {
                             Matrixelement<T>::way_del = delete_helper::right;
-                            all_ok = Matrixelement<T>::folloup_right->del_method(way2, delete_helper::right);
+                            all_ok = Matrixelement<T>::followup_right->del_method(way2, delete_helper::right);
                         } else {
                             Matrixelement<T>::way_del = delete_helper::up;
                             all_ok = Matrixelement<T>::before_up->del_method(way2, delete_helper::up);
@@ -125,12 +181,13 @@ bool del_method(delete_helper way1, delete_helper way2) {
                     default:
                         return false;
                 }
+                break;
         }
     } else if (way1 == delete_helper::right && way2 == delete_helper::right && Matrixelement<T>::followup_right != NULL) {
         Matrixelement<T>::way_del = delete_helper::right;
-        Matrixelement<T>::followup:right->del_method(way1, way2);
+        Matrixelement<T>::followup_right->del_method(way1, way2);
     }
-    this->~Matrixelement();
+    this->delete_next();
     return all_ok;
 }
 
@@ -157,6 +214,7 @@ bool Matrixelement<T>::init_sec() {
         Matrixelement<T> *left_temp = Matrixelement<T>::before_left;
         Matrixelement<T> *right_temp = this;
         while(left_temp->get_down() != NULL && right_temp->get_down() != NULL) {
+            std::cout<<left_temp->get_down()<<" and "<<right_temp->get_down()<<std::endl;
             left_temp->get_down()->set_right(right_temp->get_down());
             right_temp->get_down()->set_left(left_temp->get_down());
             left_temp = left_temp->get_down();
@@ -168,6 +226,7 @@ bool Matrixelement<T>::init_sec() {
         delete right_temp;
         return true;
     }
+    return true;
 }
 
 template <class T>
@@ -191,52 +250,71 @@ Matrixelement<T>* Matrixelement<T>::get_down() {
 }
 
 template <class T>
-T Matrixelement<T>::get_iterate(int x, int y) {
+T& Matrixelement<T>::get_iterate(int x, int y) {
     switch (x) {
         case 0:
-            return Matrixelement<T>::followup_down->get_iterate(x, y-1);     
-        default:
             if(y != 0) {
-                return Matrixelement<T>::followup_right->get_iterate(x-1, y);
-            }
-            return Matrixelement<T>::data;
+                return Matrixelement<T>::followup_down->get_iterate(x, y-1);
+            }    
+            return *Matrixelement<T>::data;
+        default:
+            return Matrixelement<T>::followup_right->get_iterate(x-1, y); 
     }
 }
 
 template <class T>
-bool Matrixelement<T>::set_iterate(int x, int y, T& data) {
+bool Matrixelement<T>::set_iterate(int x, int y, T& data_new) {
     switch (x) {
         case 0:
             if(y != 0) {
-                return Matrixelement<T>::followup_right->get_iterate(x-1, y);
+                return Matrixelement<T>::followup_down->set_iterate(x, y-1, data_new);
             }
-            return Matrixelement<T>::data = data;    
+            *Matrixelement<T>::data = data_new;    
+            return true;
         default:
-            return Matrixelement<T>::followup_down->get_iterate(x, y-1); 
+            return Matrixelement<T>::followup_right->set_iterate(x-1, y, data_new); 
     }
 }
 
 template <class T>
 vector<T> Matrixelement<T>::get_row(int y) {
     switch (y) {
-        case 0:
-            vector<T> temp(Matrixelement<T> data);
+        case 0: {
+            if(Matrixelement<T>::followup_right == NULL) {
+                vector<T> temp_end({*Matrixelement<T>::data});
+                std::cout<<temp_end.size()<<" size array "<<std::endl;
+                return temp_end;
+            }
+            vector<T> temp({*Matrixelement<T>::data});
             vector<T> get_temp = Matrixelement<T>::followup_right->get_row(y);
-            return temp.insert(temp.end(), get_temp.begin(), get_temp.end());
-        default:
+            temp.insert(temp.end(), get_temp.begin(), get_temp.end());
+            std::cout<<temp.size()<<" size array "<<get_temp.size()<<std::endl;
+            return temp;
+        }
+        default: {
             return Matrixelement<T>::followup_down->get_row(y-1);
+        }
     }
 }
 
 template <class T>
 vector<T> Matrixelement<T>::get_column(int x) {
     switch (x) {
-        case 0:
-            vector<T> temp(Matrixelement<T> data);
+        case 0: {
+            if(Matrixelement<T>::followup_down == NULL) {
+                vector<T> temp_end({*Matrixelement<T>::data});
+                std::cout<<temp_end.size()<<" size array "<<std::endl;
+                return temp_end;
+            }
+            vector<T> temp({*Matrixelement<T>::data});
             vector<T> get_temp = Matrixelement<T>::followup_down->get_column(x);
-            return temp.insert(temp.end(), get_temp.begin(), get_temp.end());   
-        default:
+            temp.insert(temp.end(), get_temp.begin(), get_temp.end());
+            std::cout<<temp.size()<<" size array "<<get_temp.size()<<std::endl;
+            return temp; 
+        } 
+        default: {
             return Matrixelement<T>::followup_right->get_column(x-1);
+        }
     }
 }
 
@@ -261,6 +339,7 @@ bool Matrixelement<T>::add_dimension_y(int y, int &current_size_x, int &current_
         current_size_y++;
         Matrixelement<T>::followup_down->add_dimension(y-1, current_size_x, current_size_y);
     }
+    return true;
 }
 
 template <class T>
@@ -286,6 +365,7 @@ bool Matrixelement<T>::add_dimension_x(int x, int &current_size_x, int &current_
     } else {
         Matrixelement<T>::followup_right->add_dimension_x(x, current_size_x, current_size_y);
     }
+    return true;
 }
 
 template <class T>
@@ -319,6 +399,7 @@ if(y > 0) {
             Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::up);
         }
     }
+    return true;
 }
 
 template <class T>
@@ -347,37 +428,38 @@ bool Matrixelement<T>::delete_dimension_x(int x, int current_size_x, int current
         temp = NULL;
         delete temp;
     }
+    return true;
 }
 
 template <class T>
 void Matrixelement<T>::set_right(Matrixelement<T>* new_right) {
-    Matrixelement<T>::followup_right == new_right;
+    Matrixelement<T>::followup_right = new_right;
 }
 
 template <class T>
 void Matrixelement<T>::set_left(Matrixelement<T>* new_left) {
-    Matrixelement<T>::before_left == new_left;
+    Matrixelement<T>::before_left = new_left;
 }
 
 template <class T>
 void Matrixelement<T>::set_up(Matrixelement<T>* new_up) {
-    Matrixelement<T>::before_up == new_up;
+    Matrixelement<T>::before_up = new_up;
 }
 
 template <class T>
 void Matrixelement<T>::set_down(Matrixelement<T>* new_down) {
-    Matrixelement<T>::followup_down == new_down;
+    Matrixelement<T>::followup_down = new_down;
 }
 
 template <class T>
 void Matrixelement<T>::print_data(int y, bool first) {
     if (y > -1 && Matrixelement<T>::followup_right != NULL) {
-        cout << Matrixelement<T>::data << "   ";
+        cout << *Matrixelement<T>::data << "   ";
         Matrixelement<T>::followup_right->print_data(y, false);
         if(first && Matrixelement<T>::followup_down != NULL) {
-            Matrixelement<T>::followup_down->print_data(y-1, true)
+            Matrixelement<T>::followup_down->print_data(y-1, true);
         }
     } else if(y > -1 && Matrixelement<T>::followup_right == NULL) {
-        cout << Matrixelement<T>::data << endl;
+        cout << *Matrixelement<T>::data << endl;
     }
 }

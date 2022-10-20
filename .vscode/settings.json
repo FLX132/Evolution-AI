@@ -42,6 +42,8 @@
         "xmemory": "cpp",
         "xstddef": "cpp",
         "xstring": "cpp",
-        "xutility": "cpp"
-    }
+        "xutility": "cpp",
+        "array": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }

@@ -1,5 +1,4 @@
-#include <iostream>
-#include <vector>
+#include "AllHeaders.h"
 using namespace std;
 
 /**
@@ -25,7 +24,7 @@ template <typename T> class Matrixelement {
       Matrixelement<T> *before_up = NULL;
       delete_helper way_del;
 
-      T data;
+      T* data = NULL;
 
     public:
       Matrixelement(int x, int y, Matrixelement<T> *up, Matrixelement<T> *left);
@@ -40,10 +39,10 @@ template <typename T> class Matrixelement {
       void set_left(Matrixelement<T>* new_left);
       void set_up(Matrixelement<T>* new_up);
       void set_down(Matrixelement<T>* new_down);
-      T get_iterate(int x, int y);
+      T& get_iterate(int x, int y);
       bool set_iterate(int x, int y, T& data);
-      vector<T> get_row(int y);
-      vector<T> get_column(int x);
+      vector<T&> get_row(int y);
+      vector<T&> get_column(int x);
       bool add_dimension_y(int y, int &current_size_x, int &current_size_y);
       bool add_dimension_x(int x, int &current_size_x, int &current_size_y);
       bool delete_dimension_y(int y, int current_size_x, int current_size_y, int rows);
