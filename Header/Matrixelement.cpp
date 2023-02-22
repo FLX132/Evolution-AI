@@ -169,7 +169,6 @@ bool Matrixelement<T>::del_method(delete_helper way1, delete_helper way2) {
                         }
                         break;
                     case delete_helper::up:
-                        std::cout<<"right up"<<std::endl;
                         if(Matrixelement<T>::before_up == NULL) {
                             Matrixelement<T>::way_del = delete_helper::right;
                             all_ok = Matrixelement<T>::followup_right->del_method(way2, delete_helper::right);
