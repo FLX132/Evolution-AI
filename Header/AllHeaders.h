@@ -5,4 +5,7 @@
 #include <array>
 #include <exception>
 #include <type_traits>
+#include <algorithm>
+#include <numeric>
+#include <map>
 #endif

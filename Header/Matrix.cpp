@@ -11,22 +11,20 @@ template <typename T, typename = typename enable_if<is_arithmetic<T>::value, T>:
 
     public:
         Matrix(int x, int y, vector<T> values);
-        Matrix(int &x, int &y);
+        Matrix(int x, int y);
         ~Matrix();
         void autofill(T values[]);
-        vector<T> get_row(int y);
-        vector<T> get_column(int x);
-        int get_x();
-        int get_y();
-        T get_val(int x, int y);
+        vector<T> get_row(int y) const;
+        vector<T> get_column(int x) const;
+        int get_x() const;
+        int get_y() const;
+        T get_val(int x, int y) const;
+        void set_val(int &x, int &y, T data);
         void print();
-        Matrix<T>& operator*(Matrix<T> mul);
+        void operator=(const Matrix<T>& new_val);
+        Matrix<T>& operator*(const Matrix<T> &mul) const;
         Matrix<T>& operator+(Matrix<T> add);
-        Matrix<T>& operator+=(Matrix<T>& add_is);
-        Matrix<T>& operator*=(Matrix<T>& mul_is);
-        //template <class M = T, enable_if<is_floating_point<M>::value, bool> == true> {
-        //    void rand_fill();
-        //}
+        void rand_fill();
 };
 
 template <typename T, typename M>
@@ -53,7 +51,7 @@ Matrix<T, M>::Matrix(int x, int y, vector<T> values) {
 }
 
 template <typename T, typename M>
-Matrix<T, M>::Matrix(int& x, int& y) {
+Matrix<T, M>::Matrix(int x, int y) {
     Matrix<T, M>::reference_start = new Matrixelement<T>(x-1, y-1, NULL, NULL);
     Matrix<T, M>::reference_start->init_sec();
     Matrix<T, M>::current_x = x;
@@ -82,55 +80,65 @@ void Matrix<T, M>::autofill(T values[]) {
 }
 
 template <typename T, typename M>
-vector<T> Matrix<T, M>::get_row(int y) {
+vector<T> Matrix<T, M>::get_row(int y) const {
     return Matrix<T, M>::reference_start->get_row(y);
 }
 
 template <typename T, typename M>
-vector<T> Matrix<T, M>::get_column(int x) {
+vector<T> Matrix<T, M>::get_column(int x) const {
     return Matrix<T, M>::reference_start->get_column(x);
 }
 
 template <typename T, typename M>
-int Matrix<T, M>::get_x() {
+int Matrix<T, M>::get_x() const {
     return Matrix<T, M>::current_x;
 }
 
 template <typename T, typename M>
-int Matrix<T, M>::get_y() {
+int Matrix<T, M>::get_y() const {
     return Matrix<T, M>::current_y;
 }
 
 template <typename T, typename M>
-T Matrix<T, M>::get_val(int x, int y) {
+T Matrix<T, M>::get_val(int x, int y) const {
     return Matrix<T, M>::reference_start->get_iterate(x, y);
 }
 
 template <typename T, typename M>
-Matrix<T>& Matrix<T, M>::operator*(Matrix<T> mul) {
+void Matrix<T, M>::set_val(int &x, int &y, T data) {
+    Matrix<T, M>::reference_start->set_iterate(x, y, data);
+}
+
+template <typename T, typename M>
+Matrix<T>& Matrix<T, M>::operator*(const Matrix<T> &mul) const{
     try {
         if(this->get_x() != mul.get_y()) {
             throw "False Matrix dimensions";
         }
-        Matrix<T> temp = Matrix<T>(this->get_y(), mul.get_x());
-        vector<vector<T>> mul1;
+        int y = this->get_y();
+        int x = mul.get_x();
+        Matrix<T> temp(y, x);
         vector<vector<T>> mul2;
-        for(int i = 1; i <= mul.get_x(); i++) {
+        for(int i = 0; i < mul.get_x(); i++) {
             mul2.push_back(mul.get_column(i));
         }
-        for(int i = 1; i <= this->get_y(); i++) {
-            mul1.push_back(this->get_row(i));
-        }
-        // for-loop putting matrix mul values together
-        for(int i = 0; i < temp->get_y(); i++) {
-            for(int j = 0; j < temp->get_x(); j++) {
-                temp(j, i) = i;//not n³
+        for(int i = 0; i < this->get_y(); i++) {
+            vector<T> first_matrix = this->get_row(i);
+            for(int j = 0; j < mul2.size(); j++) {
+                vector<T> temp_rows(0);
+                transform(first_matrix.begin(), first_matrix.end(), mul2[j].begin(), back_inserter(temp_rows), multiplies<T>());
+                T new_data = accumulate(temp_rows.begin(), temp_rows.end(), 0);
+                temp.set_val(j, i, new_data);
             }
         }
+        Matrix<T>& temp2 = temp;
+        return temp2;
     }
     catch(const std::exception& e) {
         std::cerr << e.what() << '\n';
-        return new Matrix(1, 1);
+        int x = 1;
+        Matrix<T> err = Matrix(x,x);
+        return err;
     }
     
 }
@@ -138,11 +146,23 @@ Matrix<T>& Matrix<T, M>::operator*(Matrix<T> mul) {
 template <typename T, typename M>
 Matrix<T>& Matrix<T, M>::operator+(Matrix<T> add) {}
 
-template <typename T, typename M>
-Matrix<T>& Matrix<T, M>::operator+=(Matrix<T>& add_is) {}
-
-template <typename T, typename M>
-Matrix<T>& Matrix<T, M>::operator*=(Matrix<T>& mul_is) {}
+/*template <typename T, typename M>
+void Matrix<T, M>::operator=(const Matrix<T>& new_val) {
+    try {
+        cout<<"in = "<<new_val.get_val(1, 1);
+        if((this->get_x() != new_val.get_y()) || (this->get_y() != new_val.get_y())) {
+            throw "false x or y for =";
+        }
+        for(int i = 0; i < new_val.get_y(); i++) {
+            for(int j = 0; j <new_val.get_x(); j++) {
+                this->set_val(j, i, new_val.get_val(j, i));
+            }
+        }
+    }
+    catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }    
+}*/
 
 template <typename T, typename M>
 void Matrix<T, M>::print() {
