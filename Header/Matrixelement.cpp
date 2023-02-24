@@ -25,13 +25,15 @@ template <typename T> class Matrixelement {
       int is_row;
 
     public:
+      Matrixelement(int x, int y, int is_row);
+      Matrixelement(int x, int y);
       Matrixelement(int x, int y, Matrixelement<T>& left);
       Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up);
       Matrixelement(int x, int y, Matrixelement<T>& left, int is_row);
       Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up, int is_row);
       ~Matrixelement();
       T get_iterate(int x, int y);
-      bool set_iterate(int x, int y, T& data_new);
+      bool set_iterate(int x, int y, T data_new);
       vector<T> get_row(int y);
       vector<T> get_column(int x);
       bool add_dimension_y(int current_size_x);
@@ -43,8 +45,36 @@ template <typename T> class Matrixelement {
 using namespace std;
 
 template <class T>
+Matrixelement<T>::Matrixelement(int x, int y, int is_row) {
+    this->data = new T(0);
+    this->is_row = is_row;
+
+    if (y-1 > 0) {
+        this->connections_elements.insert(connection::down, Matrixelement<T> m(x, y-1, *this, true, 1));
+    }
+
+    if (x-1 > 0) {
+        this->connections_elements.insert(connection::right, Matrixelement<T>(x-1, y-1, *this, 1));
+    }
+}
+
+template <class T>
+Matrixelement<T>::Matrixelement(int x, int y) {
+    this->data = new T(0);
+    this->is_row = 0;
+
+    if (y-1 > 0) {
+        this->connections_elements.insert(connection::down, Matrixelement<T> m(x, y-1, *this));
+    }
+
+    if (x-1 > 0) {
+        this->connections_elements.insert(connection::right, Matrixelement<T>(x-1, y-1, *this, true));
+    }
+}
+
+template <class T>
 Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& left) {
-    this->data = new T();
+    this->data = new T(0);
     this->is_row = 0;
 
     this->connections_elements.insert(connection::left, left);
@@ -60,7 +90,7 @@ Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& left) {
 
 template <class T>
 Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up) {
-    this->data = new T();
+    this->data = new T(0);
     this->is_row = 0;
 
     this->connections_elements.insert(connection::up, up);
@@ -72,7 +102,7 @@ Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up) 
 
 template <class T>
 Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& left, int is_row) {
-    this->data = new T();
+    this->data = new T(0);
     this->is_row = is_row;
 
     this->connections_elements.insert(connection::left, left);
@@ -84,7 +114,7 @@ Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& left, int is_row
 
 template <class T>
 Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up, int is_row) {
-    this->data = new T();
+    this->data = new T(0);
     this->is_row = is_row;
 
     this->connections_elements.insert(connection::up, up);
@@ -94,7 +124,7 @@ Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up, 
     }
 
     if (x-1 > 0) {
-        this->connections_elements.insert(connection::right, Matrixelement<T>(x-1, y-1, *this, 1));
+        this->connections_elements.insert(connection::right, Matrixelement<T>(x-1, y, *this, 1));
     }
 }
 template <class T>
@@ -111,7 +141,7 @@ T Matrixelement<T>::get_iterate(int x, int y) {
         } else if (x > 0) {
             this->connections_elements.find(connection::right).get_iterate(x-1, y);
         } else {
-            return *this->data;
+            return *(this->data);
         }
     } else {
         if(x > 0) {
@@ -119,13 +149,13 @@ T Matrixelement<T>::get_iterate(int x, int y) {
         } else if (y > 0) {
             this->connections_elements.find(connection::down).get_iterate(x, y-1);
         } else {
-            return *this->data;
+            return *(this->data);
         }
     }
 }
 
 template <class T>
-bool Matrixelement<T>::set_iterate(int x, int y, T& data_new) {
+bool Matrixelement<T>::set_iterate(int x, int y, T data_new) {
     if (this->is_row) {
         if(y > 0) {
             this->connections_elements.find(connections::down).set_iterate(x, y-1, data_new);

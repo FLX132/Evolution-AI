@@ -4,75 +4,73 @@ using namespace std;
 
 template <typename T, typename = typename enable_if<is_arithmetic<T>::value, T>::type> class Matrix {
     private:
-        Matrixelement<T>* reference_start = NULL;
+        Matrixelement<T> columns_matrix;
+        Matrixelement<T> rows_matrix;
         int current_x;
         int current_y;
-        bool error_in_construct = false;
 
     public:
-        Matrix(int x, int y, vector<T> values);
+        Matrix(int x, int y, initializer_list<T> values);
         Matrix(int x, int y);
         ~Matrix();
         void autofill(T values[]);
+        bool autofill(initializer_list<T> values);
+        void randomfill();
         vector<T> get_row(int y) const;
         vector<T> get_column(int x) const;
         int get_x() const;
         int get_y() const;
         T get_val(int x, int y) const;
-        void set_val(int &x, int &y, T data);
+        void set_val(int x, int y, T data);
         void print();
-        void operator=(const Matrix<T>& new_val);
+        void operator=(const Matrix<T> &new_val);
         Matrix<T>& operator*(const Matrix<T> &mul) const;
         Matrix<T>& operator+(Matrix<T> add);
         void rand_fill();
 };
 
 template <typename T, typename M>
-Matrix<T, M>::Matrix(int x, int y, vector<T> values) {
-    if(x*y != (values.size())) {
-        std::cout<<"false formatted init-list";
-        Matrix<T, M>::error_in_construct = true;
-        delete this;
+Matrix<T, M>::Matrix(int x, int y, initializer_list<T> values) : current_x{x}, current_y{y} {
+    bool error_in_construct = false;
+    if(x*y < (values.size())) {
+        std::cout<<"initializer list is smaller than expected"<<endl<<"  - left out fields will be filled randomly"<<endl;
+        error_in_construct = true;
     } else {
-        Matrix<T, M>::reference_start = new Matrixelement<T>(x-1, y-1, NULL, NULL);
-        Matrix<T, M>::reference_start->init_sec();
-        std::cout<<"Matrix init "<<values.size()<<std::endl;
-        int count = 0;
-        for(int i = 0; i < y; i++) {
-            for(int j = 0; j < x; j++) {
-                cout<<i<<" "<<j<<" "<<count<<std::endl;
-                Matrix<T, M>::reference_start->set_iterate(j, i, values[count]);
-                count++;
-            }
-        }
-        Matrix<T, M>::current_x = x;
-        Matrix<T, M>::current_y = y;
+        std::cout<<"initializer list is bigger than expected"<<endl<<"   - overflow list elements will be left out"<<endl;
+    }
+    
+    if (!this->error_in_construct) {
+        this->columns_matrix = Matrixelement<T>(x, y);
+        this->rows_matrix = Matrixelement<T>(x, y, 1);
+
+        this->autofill(values);
+    } else {
+        this->rand_fill();
+        this->autofill(values);
     }
 }
 
 template <typename T, typename M>
 Matrix<T, M>::Matrix(int x, int y) {
-    Matrix<T, M>::reference_start = new Matrixelement<T>(x-1, y-1, NULL, NULL);
-    Matrix<T, M>::reference_start->init_sec();
-    Matrix<T, M>::current_x = x;
-    Matrix<T, M>::current_y = y;
+    std::cout<<"no initializer list provided"<<endl<<"  - matrix is filled with random values"<<endl;
+    this->columns_matrix = Matrixelement<T>(x, y);
+    this->rows_matrix = Matrixelement<T>(x, y, 1);
+    this->rand_fill();
 }
 
 template <typename T, typename M>
 Matrix<T, M>::~Matrix() {
-    if(!Matrix<T, M>::error_in_construct) {
-        Matrix<T, M>::reference_start->del_method(delete_helper::down, delete_helper::down);
-        delete Matrix<T, M>::reference_start;
-    }
-    Matrix<T, M>::reference_start == NULL;
+    this->columns_matrix.clear();
+    this->rows_matrix.clear();
 }
 
 template <typename T, typename M>
 void Matrix<T, M>::autofill(T values[]) {
     int count = 0;
-    for(int i = 0; i < this->get_y(); i++) {
-        for(int j = 0; j < this->get_x(); j++) {
-            Matrix<T, M>::reference_start->set_iterate(j, i, values[count]);
+    for(int i = 0; i < this->current_y; i++) {
+        for(int j = 0; j < this->current_x; j++) {
+            this->rows_matrix.set_iterate(j, i, values[count]);
+            this->columns_matrix.set_iterate(j, i, values[count]);
             count++;
         }
         count++;
@@ -80,33 +78,61 @@ void Matrix<T, M>::autofill(T values[]) {
 }
 
 template <typename T, typename M>
+bool Matrix<T, M>::autofill(initializer_list<T> values) {
+    auto count = values.begin();
+    for(int i = 0; i < this->current_y; i++) {
+        for(int j = 0; j < this->current_x; j++) {
+            if(count == values.end()) {
+                return true;
+            }
+            this->rows_matrix.set_iterate(j, i, *count);
+            this->columns_matrix.set_iterate(j, i, *count);
+            count++;
+        }
+        count++;
+    }
+    return true;
+}
+
+template <typename T, typename M>
+void Matrix<T, M>::void randomfill() {
+    for(int i = 0; i < this->current_y; i++) {
+        for(int j = 0; j < this->current_x; j++) {
+            this->rows_matrix.set_iterate(j, i, rand());
+            this->columns_matrix.set_iterate(j, i, rand());
+        }
+    }
+}
+
+template <typename T, typename M>
 vector<T> Matrix<T, M>::get_row(int y) const {
-    return Matrix<T, M>::reference_start->get_row(y);
+    return this->rows_matrix.get_row(y);
 }
 
 template <typename T, typename M>
 vector<T> Matrix<T, M>::get_column(int x) const {
-    return Matrix<T, M>::reference_start->get_column(x);
+    return this->rows_matrix.get_column(x);
 }
 
 template <typename T, typename M>
 int Matrix<T, M>::get_x() const {
-    return Matrix<T, M>::current_x;
+    return this->current_x;
 }
 
 template <typename T, typename M>
 int Matrix<T, M>::get_y() const {
-    return Matrix<T, M>::current_y;
+    return this->current_y;
 }
 
 template <typename T, typename M>
 T Matrix<T, M>::get_val(int x, int y) const {
-    return Matrix<T, M>::reference_start->get_iterate(x, y);
+    return this->rows_matrix.get_iterate(x, y);
 }
 
 template <typename T, typename M>
-void Matrix<T, M>::set_val(int &x, int &y, T data) {
-    Matrix<T, M>::reference_start->set_iterate(x, y, data);
+void Matrix<T, M>::set_val(int x, int y, T data) {
+    this->rows_matrix.set_iterate(x, y, data);
+    this->columns_matrix.set_iterate(x, y, data);
 }
 
 template <typename T, typename M>
@@ -146,7 +172,7 @@ Matrix<T>& Matrix<T, M>::operator*(const Matrix<T> &mul) const{
 template <typename T, typename M>
 Matrix<T>& Matrix<T, M>::operator+(Matrix<T> add) {}
 
-/*template <typename T, typename M>
+template <typename T, typename M>
 void Matrix<T, M>::operator=(const Matrix<T>& new_val) {
     try {
         cout<<"in = "<<new_val.get_val(1, 1);
@@ -162,9 +188,9 @@ void Matrix<T, M>::operator=(const Matrix<T>& new_val) {
     catch(const std::exception& e) {
         std::cerr << e.what() << '\n';
     }    
-}*/
+}
 
 template <typename T, typename M>
 void Matrix<T, M>::print() {
-    Matrix<T, M>::reference_start->print_data(Matrix<T, M>::current_y-1, true);
+    this->rows_matrix.print_data();
 }

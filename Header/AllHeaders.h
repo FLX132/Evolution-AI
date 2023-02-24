@@ -8,4 +8,6 @@
 #include <algorithm>
 #include <numeric>
 #include <map>
+#include <initializer_list>
+#include <cstdlib>
 #endif
