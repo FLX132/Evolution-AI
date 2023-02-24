@@ -29,6 +29,7 @@ template <typename T> class Matrixelement {
       Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up);
       Matrixelement(int x, int y, Matrixelement<T>& left, int is_row);
       Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up, int is_row);
+      ~Matrixelement();
       T get_iterate(int x, int y);
       bool set_iterate(int x, int y, T& data_new);
       vector<T> get_row(int y);
@@ -95,6 +96,11 @@ Matrixelement<T>::Matrixelement(int x, int y, Matrixelement<T>& up, bool is_up, 
     if (x-1 > 0) {
         this->connections_elements.insert(connection::right, Matrixelement<T>(x-1, y-1, *this, 1));
     }
+}
+template <class T>
+Matrixelement<T>::~Matrixelement() {
+    this->connections_elements.clear();
+    delete this->data;
 }
 
 template <class T>
@@ -226,66 +232,47 @@ bool Matrixelement<T>::add_dimension_x(int current_size_y) {
 }
 
 template <class T>
-bool Matrixelement<T>::delete_dimension_y(int y, int current_size_x, int current_size_y, int rows) { // y = current_size_y - rows to delete
-if(y > 0) {
-        Matrixelement<T>::followup_right::delete_dimension_x(y-1);
-    } else {
-        Matrixelement<T>* up_temp = this->get_right();
-        Matrixelement<T>* down_temp = this-get_down()->get_right();
-
-        while (up_temp != NULL) {
-            up_temp->set_down(NULL);
-            down_temp->set_up(NULL);
-            up_temp = up_temp->get_right();
-            down_temp = down_temp->get_right();
+bool Matrixelement<T>::delete_dimension_y(int current_size_y, int rows) { // y = current_size_y - rows to delete
+    if(this->is_row) {
+        if((current_size_y - rows > 1)) {
+            return this->connections_elements.find(connection::down).delete_dimension_y(current_size_y, rows + 1);
+        } else if(this->connections_elements.contains(connection::down)) {
+            this->connections_elements.erase(connection::down);
         }
-
-        up_temp = NULL;
-        down_temp = NULL;
-        delete up_temp;
-        delete down_temp;
-        
-        if(current_size_x == 1 && rows == 1) {
-            delete Matrixelement<T>::followup_down;
-            Matrixelement<T>::followup_down = NULL;
-        } else if(current_size_x == 1 && rows != 1) {
-            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::right);
-        } else if(current_size_x != 1 && rows == 1) {
-            Matrixelement<T>::followup_down->del_method(delete_helper::right, delete_helper::right);
-        } else {
-            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::up);
-        }
+        return true;
     }
-    return true;
+
+    if(this->connections_elements.contains(connection::right)) {
+        this->connections_elements.find(connection::right).delete_dimension_y(current_size_y, rows);
+    }
+
+    if((current_size_y - rows > 1)) {
+        return this->connections_elements.find(connection::down).delete_dimension_y(current_size_y, rows + 1);
+    } else if(this->connections_elements.contains(connection::down)) {
+        this->connections_elements.erase(connection::down);
+    }
 }
 
 template <class T>
-bool Matrixelement<T>::delete_dimension_x(int x, int current_size_x, int current_size_y, int columns) { // x = current_size_x - columns to delete
-    if(x > 0) {
-        Matrixelement<T>::followup_right::delete_dimension_x(x-1);
-    } else {
-        if(columns == 1 && current_size_y == 1) {
-            delete Matrixelement<T>::followup_down;
-            Matrixelement<T>::followup_down = NULL;
-        } else if(columns == 1 && current_size_y != 1) {
-            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::right);
-        } else if(columns != 1 && current_size_y == 1) {
-            Matrixelement<T>::followup_down->del_method(delete_helper::right, delete_helper::right);
-        } else {
-            Matrixelement<T>::followup_down->del_method(delete_helper::up, delete_helper::up);
+bool Matrixelement<T>::delete_dimension_x(int current_size_x, int columns) { // x = current_size_x - columns to delete
+    if(!this->is_row) {
+        if((current_size_x - columns > 1)) {
+            return this->connections_elements.find(connection::right).delete_dimension_x(current_size_x, columns + 1);
+        } else if(this->connections_elements.contains(connection::right)) {
+            this->connections_elements.erase(connection::right);
         }
-        Matrixelement<T>::followup_right::del_helper(delete_helper::down, delete_helper::down);
-        delete Matrixelement<T>::followup_right;
-        Matrixelement<T>::followup_right = NULL;
-        Matrixelement<T>* temp = Matrixelement<T>::followup_down;
-        while(temp != NULL) {
-            temp->set_right(NULL);
-            temp = temp->get_down();
-        }
-        temp = NULL;
-        delete temp;
+        return true;
     }
-    return true;
+
+    if(this->connections_elements.contains(connection::down)) {
+        this->connections_elements.find(connection::down).delete_dimension_x(current_size_x, columns);
+    }
+
+    if((current_size_x - columns > 1)) {
+        return this->connections_elements.find(connection::right).delete_dimension_x(current_size_x, columns + 1);
+    } else if(this->connections_elements.contains(connection::right)) {
+        this->connections_elements.erase(connection::right);
+    }
 }
 
 template <class T>
